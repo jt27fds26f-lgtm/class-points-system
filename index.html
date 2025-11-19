@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>班级积分管理系统</title>
+<style>
+    body {
+        font-family: sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        transition: 0.3s;
+    }
+    :root {
+        --bg: #ffffff;
+        --text: #000000;
+        --card: #f4f4f4;
+    }
+    .dark {
+        --bg: #1e1e1e;
+        --text: #ffffff;
+        --card: #333333;
+    }
+    .container {
+        width: 90%;
+        max-width: 900px;
+        margin: auto;
+        padding: 20px;
+    }
+    .card {
+        background: var(--card);
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    input, button, textarea {
+        padding: 8px 12px;
+        margin: 5px 0;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>班级积分管理系统</h1>
+
+<button onclick="toggleTheme()">切换主题</button>
+<button onclick="resetData()">重置系统</button>
+
+<div class="card">
+    <h2>导入学生名单</h2>
+    <textarea id="studentInput" rows="4" style="width:100%;" placeholder="每行一个学生姓名"></textarea>
+    <button onclick="importStudents()">一键导入</button>
+</div>
+
+<div class="card">
+    <h2>搜索学生</h2>
+    <input id="search" placeholder="输入姓名" oninput="render()">
+</div>
+
+<div class="card">
+    <h2>全班积分调整</h2>
+    <button onclick="addAll(1)">全班+1</button>
+    <button onclick="addAll(-1)">全班-1</button>
+</div>
+
+<div class="card">
+    <h2>随机点名</h2>
+    <button onclick="randomCall()">随机点名</button>
+    <p id="randomResult"></p>
+</div>
+
+<div class="card">
+    <h2>随机抽奖</h2>
+    <button onclick="randomReward()">抽奖</button>
+    <p id="rewardResult"></p>
+</div>
+
+<div class="card">
+    <h2>学生列表</h2>
+    <div id="list"></div>
+</div>
+
+<div class="card">
+    <h2>排行榜</h2>
+    <button onclick="showRank()">刷新排行榜</button>
+    <ul id="rank"></ul>
+</div>
+
+</div>
+
+<script>
+let students = JSON.parse(localStorage.getItem("students") || "[]");
+let dark = JSON.parse(localStorage.getItem("dark") || "false");
+
+function save() {
+    localStorage.setItem("students", JSON.stringify(students));
+}
+
+function toggleTheme() {
+    dark = !dark;
+    localStorage.setItem("dark", JSON.stringify(dark));
+    document.body.classList.toggle("dark", dark);
+}
+
+document.body.classList.toggle("dark", dark);
+
+function importStudents() {
+    const text = document.getElementById("studentInput").value.trim();
+    if (!text) return;
+    students = text.split("\n").map(s => ({ name: s, score: 0 }));
+    save();
+    render();
+    alert("导入成功！");
+}
+
+function addAll(n) {
+    students.forEach(s => s.score += n);
+    save();
+    render();
+}
+
+function randomCall() {
+    if (students.length === 0) return;
+    let s = students[Math.floor(Math.random() * students.length)];
+    document.getElementById("randomResult").innerText = s.name;
+}
+
+function randomReward() {
+    if (students.length === 0) return;
+    let s = students[Math.floor(Math.random() * students.length)];
+    document.getElementById("rewardResult").innerText = s.name + " 获得奖励！";
+}
+
+function render() {
+    const kw = document.getElementById("search").value.trim();
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+
+    students
+        .filter(s => s.name.includes(kw))
+        .forEach((s, i) => {
+            let div = document.createElement("div");
+            div.innerHTML = `
+                <div class="card">
+                    <b>${s.name}</b> - 积分：${s.score}
+                    <br>
+                    <button onclick="changeScore(${i}, 1)">+1</button>
+                    <button onclick="changeScore(${i}, -1)">-1</button>
+                    <button onclick="changeScore(${i}, 5)">+5</button>
+                    <button onclick="changeScore(${i}, -5)">-5</button>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+}
+
+function changeScore(i, n) {
+    students[i].score += n;
+    save();
+    render();
+}
+
+function showRank() {
+    const rank = document.getElementById("rank");
+    rank.innerHTML = "";
+    students
+        .slice()
+        .sort((a, b) => b.score - a.score)
+        .forEach(s => {
+            let li = document.createElement("li");
+            li.innerText = `${s.name}：${s.score}`;
+            rank.appendChild(li);
+        });
+}
+
+function resetData() {
+    if (confirm("确定重置？")) {
+        students = [];
+        save();
+        render();
+    }
+}
+
+render();
+</script>
+
+</body>
+</html>
